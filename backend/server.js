@@ -1,8 +1,9 @@
 import express from "express";
-import mongoose from "mongoose";
+import mongoose, { trusted } from "mongoose";
 import cors from "cors";
 import cloudinary from "cloudinary";
 import multer from "multer";
+import bcrypt from "bcrypt";
 const upload = multer({ dest: 'uploads/' })
 
 
@@ -44,7 +45,8 @@ const postSchema = new mongoose.Schema({
   ]
 })
 const userSchema = new mongoose.Schema({
-  username: { type: String, required: true },
+  username: { type: String, required: true, unique:true },
+  password: { type:String, required:true},
   profilePicture: { type: String, required: true },
 });
 
@@ -85,6 +87,8 @@ app.post("/posts", upload.single('image'), async (req, res) => {
     });
   }
 })
+
+
 
 //get one by id
 
@@ -168,6 +172,25 @@ app.post("/users", async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Something went wrong",
+      error: error,
+    });
+  }
+});
+
+
+app.post("/users/login", async (req, res) => {
+  try {
+    const yesUsernameExist=await User.findOne({username:req.body.username});
+    if(!yesUsernameExist){
+      return res.status(404).json({
+        message:"userName does not exist",
+        error:error
+      })
+    }  
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Something went wrongs",
       error: error,
     });
   }
