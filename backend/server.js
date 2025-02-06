@@ -4,6 +4,7 @@ import cors from "cors";
 import cloudinary from "cloudinary";
 import multer from "multer";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 const upload = multer({ dest: 'uploads/' })
 
 
@@ -45,8 +46,8 @@ const postSchema = new mongoose.Schema({
   ]
 })
 const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique:true },
-  password: { type:String, required:true},
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
   profilePicture: { type: String, required: true },
 });
 
@@ -73,10 +74,10 @@ app.post("/posts", upload.single('image'), async (req, res) => {
   try {
     console.log(req.file, "file")
     const response = await cloudinary.uploader.upload(req.file.path)
-    console.log(response,"response")
-      
+    console.log(response, "response")
 
-    const newPost = await new Post({...req.body,image:response.secure_url}).save();
+
+    const newPost = await new Post({ ...req.body, image: response.secure_url }).save();
     return res.status(201).json(newPost);
 
   } catch (error) {
@@ -165,9 +166,31 @@ app.delete("/posts/:id", async (req, res) => {
 
 //User ROute
 
-app.post("/users", async (req, res) => {
+app.post("/users", upload.single('profilePicture'), async (req, res) => {
   try {
-    const newUser = await new User(req.body).save();
+
+    const yesUserExist = await User.findOne({ username: req.body.username });
+    console.log(yesUserExist, "yesUserExist");
+
+    if (yesUserExist) {
+      return res.status(409).json({
+        message: "User already exit,please talke another username"
+      })
+
+
+    }
+
+    const saltRounds = 10;// const facotr for hashing algorithm
+    const hashedPassword = await bcrypt.hash(req.body.password, saltRounds)
+    console.log(hashedPassword, "hashedpassword");
+
+
+
+    ///save profilepicture to cloudinary before saving to database and secure url
+    const response = await cloudinary.uploader.upload(req.file.path)
+    console.log(response, "response")
+
+    const newUser = await new User({ ...req.body, password: hashedPassword, profilePicture: response.secure_url }).save();
     return res.status(201).json(newUser);
   } catch (error) {
     return res.status(500).json({
@@ -178,23 +201,73 @@ app.post("/users", async (req, res) => {
 });
 
 
-app.post("/users/login", async (req, res) => {
-  try {
-    const yesUsernameExist=await User.findOne({username:req.body.username});
-    if(!yesUsernameExist){
-      return res.status(404).json({
-        message:"userName does not exist",
-        error:error
-      })
-    }  
+ app.post("/users/login", async (req, res) => {
+try {
+  
+  // Check if username exist or not
+  const yesUserNameExist = await User.findOne({ username: req.body.username });
+  console.log(yesUserNameExist, "yesUserNameExist");
 
-  } catch (error) {
-    return res.status(500).json({
-      message: "Something went wrongs",
-      error: error,
-    });
+  if (!yesUserNameExist) {
+    return res.status(404).json({ message: "Username does not exist." });
   }
+
+  // if exist then proceed to login
+
+
+   const  passwordMatch=await bcrypt.compare(req.body.password,yesUserNameExist.password);
+    console.log(passwordMatch,"passwordMatch");
+
+   if(!passwordMatch){
+    res.status(401).json({message:"password does not match"})
+   }
+
+
+
+
+   const jwtToken = jwt.sign({ username:req.body.username }, "2312asdase21334sfsdf43shhhhh",{expiresIn:"24h"});
+   console.log(jwtToken,"asdasasdas")
+   return res.status(200).json({
+    message:"Login successful",
+    jwtToken:jwtToken,
+    user:yesUserNameExist,
+
+   });
+
+
+
+
+  // // Compare password if username exist
+  // const passwordMatch = await bcrypt.compare(req.body.password, yesUserNameExist.password); // (12345, $2b$10$3)
+
+  // if (!passwordMatch) {
+  //   return res.status(401).json({ message: "Password does not match." });
+  // }
+  // // Generate token
+  // // var token = jwt.sign({ foo: "bar" }, "shhhhh");
+  // const jwtToken = jwt.sign({ username: req.body.username }, "74xzjhasf@#@#%532854@#@!$25328535345", { expiresIn: "24h" });
+
+  // return res.status(200).json({
+  //   message: "Login successful",
+  //   jwtToken: jwtToken,
+  //   user: yesUserNameExist,
+  // });
+} catch (error) {
+  return res.status(500).json({
+    message: "Something went wrong",
+    error: error,
+  });
+}
 });
+
+
+
+
+
+
+
+
+
 
 app.get("/users", async (req, res) => {
   try {
