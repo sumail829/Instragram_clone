@@ -5,6 +5,7 @@ import cloudinary from "cloudinary";
 import multer from "multer";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import 'dotenv/config';
 const upload = multer({ dest: 'uploads/' })
 
 
@@ -18,15 +19,15 @@ app.use(cors());
 app.use(express.json());
 
 cloudinary.config({
-  cloud_name: 'dnhun2a8m',
-  api_key: '418397955729357',
-  api_secret: '-4W76HpN8R9DU03vEabY9BgfuMM'
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET
 });
 
 //3.Database configuration
 
 try {
-  mongoose.connect("mongodb+srv://samirpanjiyar4:kDjLIMNBqE5OBuW6@cluster0.ymh08.mongodb.net/instagram?retryWrites=true&w=majority&appName=Cluster0")
+  mongoose.connect(process.env.MONGODB_URL)
   console.log("MongoDb connected succesfully");
 } catch (error) {
   console.log("mongoDb connection failed", error);
@@ -332,6 +333,6 @@ app.delete("/users/:id", async (req, res) => {
 });
 
 //Listen to the server
-app.listen(4000, () => {
-  console.log("server running on port 4000");
+app.listen(process.env.PORT, () => {
+  console.log(`server running on port ${process.env.PORT}`);
 })
