@@ -13,18 +13,18 @@ export default function Signin() {
    const[email,setEmail]=useState("");
    const[password,setPassword]=useState("");
    const router = useRouter();
-
-   const loginUser=async(e)=>{
+   
+   const loginUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-        const response=await axios.post("http://localhost:4000/users/signin",{email,password})
-        console.log(response.data)
+        const response = await axios.post("http://localhost:4000/users/signin", { email, password });
+        console.log(response.data);
         router.push("/instapage");
     } catch (error) {
         console.error("Login failed", error);
-            alert("Invalid email or password. Please try again.");
-        } 
+        alert("Invalid email or password. Please try again.");
     }
+};
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
