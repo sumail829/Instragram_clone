@@ -99,8 +99,6 @@ export default function FeedSection() {
   // Show comments handler ---------------------------------->
   const [showComment, setShowComment] = useState(false);
   const [currentCommentWalaId, setcurrentCommentWalaId] = useState();
-  console.log(showComment, "this is show comment");
-  console.log(currentCommentWalaId, "this is current comment");
 
   return (
     <div className=" space-y-8">

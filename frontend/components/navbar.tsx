@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { RegisterDialog } from './register-dialog';
 import { CreatePostDialog } from './create-post-dialog';
 
-export default function Navbar({heading}) {
+export default function Navbar({heading}:{heading:string}) {
   return (
     <div className='flex items-center justify-between'>
         <p>{heading}</p>

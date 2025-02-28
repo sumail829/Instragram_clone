@@ -1,4 +1,4 @@
-import express from "express";
+import express, { response } from "express";
 import mongoose, { trusted } from "mongoose";
 import cors from "cors";
 import cloudinary from "cloudinary";
@@ -52,10 +52,18 @@ const userSchema = new mongoose.Schema({
   profilePicture: { type: String, required: true },
 });
 
+const personSchema=new mongoose.Schema({
+  username:{ type:String},
+  email:{type:String},
+  password:{type:String,required:true}
+
+})
+
 //5.Model configuration
 
 const Post = mongoose.model("Post", postSchema);
 const User = mongoose.model("User", userSchema);
+const Person=mongoose.model("Person",personSchema);
 //Route configuration
 
 app.get("/posts", async (req, res) => {
@@ -261,7 +269,14 @@ try {
 }
 });
 
-
+//person route------------------------------------------------------------------------------->
+app.post("/users/signin",async(req,res)=>{
+  const newUser=await new Person(req.body).save();
+  return res.status(200).json({
+    message:"user logged in",
+    newuser:newUser
+  })
+})
 
 
 
