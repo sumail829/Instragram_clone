@@ -13,7 +13,7 @@ export default function Signin() {
    const[email,setEmail]=useState("");
    const[password,setPassword]=useState("");
    const router = useRouter();
-   
+
    const loginUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
@@ -58,7 +58,7 @@ export default function Signin() {
             
             <form className="flex flex-col gap-3" onSubmit={loginUser}>
               <Input 
-                type="email" 
+                type="text" 
                 value={email}
                 onChange={(e)=>setEmail(e.target.value)}
                 placeholder="Phone number, username, or email"
