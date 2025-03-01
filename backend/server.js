@@ -49,13 +49,13 @@ const postSchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  profilePicture: { type: String, required: true },
+  profilePicture: { type: String },
 });
 
-const personSchema=new mongoose.Schema({
-  username:{ type:String},
-  email:{type:String},
-  password:{type:String,required:true}
+const personSchema = new mongoose.Schema({
+  username: { type: String },
+  email: { type: String },
+  password: { type: String, required: true }
 
 })
 
@@ -63,10 +63,36 @@ const personSchema=new mongoose.Schema({
 
 const Post = mongoose.model("Post", postSchema);
 const User = mongoose.model("User", userSchema);
-const Person=mongoose.model("Person",personSchema);
+const Person = mongoose.model("Person", personSchema);
+
+//token verification
+const verifyToken = (req, res, next) => {
+  const authToken = req.headers["authorization"]; // access token
+
+  if (!authToken) {
+    return res.status(401).json({ message: "No token provided" })
+  }
+
+
+  // Bearer daijdsaoikjd123
+
+  const pureToken = authToken.split(" ")[1]
+  console.log(pureToken, "this is pure token")
+  
+  jwt.verify(pureToken,"1234567890",(err,decoded)=>{
+    if(err){
+      return res.status(403).json({message:"Token dosenot match"})
+    }
+    console.log(decoded,"This is decoded user data");
+    next();
+  });
+  
+
+
+}
 //Route configuration
 
-app.get("/posts", async (req, res) => {
+app.get("/posts",verifyToken, async (req, res) => {
   try {
     const allPost = await Post.find()
     console.log(allPost) // for developer
@@ -210,71 +236,72 @@ app.post("/users", upload.single('profilePicture'), async (req, res) => {
 });
 
 
- app.post("/users/login", async (req, res) => {
-try {
-  
-  // Check if username exist or not
-  const yesUserNameExist = await User.findOne({ username: req.body.username });
-  console.log(yesUserNameExist, "yesUserNameExist");
+app.post("/users/login", async (req, res) => {
+  try {
 
-  if (!yesUserNameExist) {
-    return res.status(404).json({ message: "Username does not exist." });
+    // Check if username exist or not
+    const yesUserNameExist = await User.findOne({ username: req.body.username });
+    console.log(yesUserNameExist, "yesUserNameExist");
+
+    if (!yesUserNameExist) {
+      return res.status(404).json({ message: "Username does not exist." });
+    }
+
+    // if exist then proceed to login
+
+
+    const passwordMatch = await bcrypt.compare(req.body.password, yesUserNameExist.password);
+    console.log(passwordMatch, "passwordMatch");
+
+    if (!passwordMatch) {
+      res.status(401).json({ message: "password does not match" })
+    }
+
+
+
+
+    const jwtToken = jwt.sign({ username: req.body.username }, "1234567890", { expiresIn: "24h" });
+    console.log(jwtToken, "asdasasdas")
+    return res.status(200).json({
+      message: "Login successful",
+      jwtToken: jwtToken,
+      user: yesUserNameExist,
+
+    });
+
+
+
+
+    // // Compare password if username exist
+    // const passwordMatch = await bcrypt.compare(req.body.password, yesUserNameExist.password); // (12345, $2b$10$3)
+
+    // if (!passwordMatch) {
+    //   return res.status(401).json({ message: "Password does not match." });
+    // }
+    // // Generate token
+    // // var token = jwt.sign({ foo: "bar" }, "shhhhh");
+    // const jwtToken = jwt.sign({ username: req.body.username }, "74xzjhasf@#@#%532854@#@!$25328535345", { expiresIn: "24h" });
+
+    // return res.status(200).json({
+    //   message: "Login successful",
+    //   jwtToken: jwtToken,
+    //   user: yesUserNameExist,
+    // });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Something went wrong",
+      error: error,
+    });
   }
-
-  // if exist then proceed to login
-
-
-   const  passwordMatch=await bcrypt.compare(req.body.password,yesUserNameExist.password);
-    console.log(passwordMatch,"passwordMatch");
-
-   if(!passwordMatch){
-    res.status(401).json({message:"password does not match"})
-   }
-
-
-
-
-   const jwtToken = jwt.sign({ username:req.body.username }, "2312asdase21334sfsdf43shhhhh",{expiresIn:"24h"});
-   console.log(jwtToken,"asdasasdas")
-   return res.status(200).json({
-    message:"Login successful",
-    jwtToken:jwtToken,
-    user:yesUserNameExist,
-
-   });
-
-
-
-
-  // // Compare password if username exist
-  // const passwordMatch = await bcrypt.compare(req.body.password, yesUserNameExist.password); // (12345, $2b$10$3)
-
-  // if (!passwordMatch) {
-  //   return res.status(401).json({ message: "Password does not match." });
-  // }
-  // // Generate token
-  // // var token = jwt.sign({ foo: "bar" }, "shhhhh");
-  // const jwtToken = jwt.sign({ username: req.body.username }, "74xzjhasf@#@#%532854@#@!$25328535345", { expiresIn: "24h" });
-
-  // return res.status(200).json({
-  //   message: "Login successful",
-  //   jwtToken: jwtToken,
-  //   user: yesUserNameExist,
-  // });
-} catch (error) {
-  return res.status(500).json({
-    message: "Something went wrong",
-    error: error,
-  });
-}
 });
 
+
 //person route------------------------------------------------------------------------------->
-app.post("/users/signin",async(req,res)=>{
-  const newUser=await new Person(req.body).save();
+app.post("/users/signin", async (req, res) => {
+  const newUser = await new Person(req.body).save();
   return res.status(200).json({
-    message:"user logged in",
-    newuser:newUser
+    message: "user logged in",
+    newuser: newUser
   })
 })
 
